@@ -552,77 +552,20 @@ module.exports = class Common {
         return zero + n;
     }
 
-    static async gifishowPost(url, data) {
+    static async axiosPost(url, data) {
         const options = {
             method: 'post',
             maxBodyLength: Infinity,
             url: url,
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/json'
             },
-            data : qs.stringify(data)
+            data : JSON.stringify(data)
         };
 
         const response = await axios.request(options);
         return response.data;
     }
-
-    static async kakaoPost(url, data) {
-        const options = {
-            method: 'post',
-            maxBodyLength: Infinity,
-            url: url,
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            data : qs.stringify(data)
-        };
-
-        const response = await axios.request(options);
-        return response.data;
-    }
-
-    static async naverApiPost(url, data) {
-        // console.log(data)
-        // console.log(this.naverMakeSignature(url, 'POST'))
-        const apiqwTimestamp = Date.now().toString();
-        const options = {
-            method: 'POST',
-            // maxBodyLength: Infinity,
-            url: 'https://sens.apigw.ntruss.com' + url,
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8',
-                'x-ncp-apigw-timestamp': apiqwTimestamp,
-                'x-ncp-iam-access-key': CONFIG.naver.access_key_id,
-                'x-ncp-apigw-signature-v2': this.naverMakeSignature(url, 'POST', apiqwTimestamp)
-            },
-            data : data
-        };
-        const response = await axios.request(options);
-        return response.data;
-    }
-
-    static naverMakeSignature(url, method, apiqwTimestamp) {
-        const space = " ";				// one space
-        const newLine = "\n";				// new line
-        // const method = method;				// method
-        // const url = url;	// url (include query string)
-        const timestamp = `${apiqwTimestamp}`;			// current timestamp (epoch)
-        const accessKey = `${CONFIG.naver.access_key_id}`;			// access key id (from portal or Sub Account)
-        const secretKey = `${CONFIG.naver.secret_key}`;			// secret key (from portal or Sub Account)
-
-        const hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, secretKey);
-        hmac.update(method);
-        hmac.update(space);
-        hmac.update(url);
-        hmac.update(newLine);
-        hmac.update(timestamp);
-        hmac.update(newLine);
-        hmac.update(accessKey);
-        const hash = hmac.finalize();
-        return hash.toString(CryptoJS.enc.Base64);
-    }
-
     /**
      * 핸드폰번호 정규식 체크 +821012341234 형식
      */
@@ -647,52 +590,6 @@ module.exports = class Common {
             localNumber += phoneNumber.slice(5,9) + phoneNumber.slice(9,13);
         }
         return [countryCode, localNumber]; //+82, 010~
-    }
-
-    /**
-     * 카테고리 코드 반환
-     */
-    static returnWordCategoryNameToCode(name){
-        let code = 'I'; // 아무것도 해당하지 않으면 I
-        if (name === '초등학교') {
-            code = 'D';
-        }else if(name === '중학교'){
-            code = 'E';
-        }
-        else if(name === '고등학교'){
-            code = 'F';
-        }
-        else if(name === '토익'){
-            code = 'G';
-        }
-        else if(name === '생활기초'){
-            code = 'I';
-        }
-        else if(name === '생활고급'){
-            code = 'H';
-        }
-        return code
-    }
-
-    /**
-     * 카테고리 이름 변환 (검색 가능한)
-     */
-    static returnSearchCategoryName(categoryName){
-        if (categoryName === '초등학교') {
-            return '초등학교';
-        }else if (categoryName === '중학교') {
-            return '중학교';
-        }else if (categoryName === '고등학교') {
-            return '고등학교'
-        }else if (categoryName === '토익') {
-            return '토익';
-        }else if (categoryName === '생활기초') {
-            return '초등학교,중학교,생활기초';
-        }else if (categoryName === '생활고급') {
-            return '고등학교,토익,생활고급';
-        }else{
-            return categoryName;
-        }
     }
 }
 
