@@ -16,9 +16,11 @@ exports.txtToImg = async (req, res, next) => {
         const url = 'http://112.169.41.227:7860/sdapi/v1/txt2img';
         const data = {
             'steps': req.body['steps'],
-            'prompt': req.body['prompt'],
+            'prompt': '((best quality, high_resolution, distinct_image)) ' + req.body['prompt'],
+            'negative_prompt': 'worst quality, low quality, watermark, text, error, blurry, jpeg artifacts, worst quality, low quality, normal quality, jpeg artifacts, signature, username, artist name, wet, bad anatomy, EasyNegative, letterbox, tattoo, (text:1.1), letterboxed, (colored skin:1.2)',
             'sd_model_checkpoint': req.body['sd_model_checkpoint'],
         };
+        console.log(data)
         const resData = await Common.axiosPost(url, data);
         if (resData.images.length === 0 ) {
             // throw new Error('ERR CREATE CHARACTER');
