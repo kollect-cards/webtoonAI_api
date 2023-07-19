@@ -19,9 +19,12 @@ router.get('/', function (req, res, next) {
 const auth = passport.authenticate('jwt', {failureRedirect: '/auth/fail', session: false, ignoreExpiration:false});
 const refresh = passport.authenticate('jwt_refresh', {failureRedirect: '/auth/fail', session: false, ignoreExpiration:false});
 
-// auth
 router.post('/auth/login/non-member', AuthController.loginNonMember);
 router.post('/auth/sign/non-member/', AuthController.signNonMember);
 router.post('/api/character/create', TestController.txtToImg);
 router.get('/api/checkPoint/list', TestController.checkPointList);
+router.get('/api/gender/list', TestController.genderList);
+router.get('/api/hair/color/list', TestController.hairColorList);
+router.get('/api/hair/length/list', TestController.hairLengthList);
+router.get('/api/costume/list', TestController.hairCostumeList);
 module.exports = router;

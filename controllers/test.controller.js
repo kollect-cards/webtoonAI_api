@@ -1,5 +1,9 @@
 const Common = require('../helpers/common');
 const CheckPoint = require('../models/check_point_model');
+const Gender = require('../models/gender_model');
+const HairLength = require('../models/hair_length_model');
+const HairColor = require('../models/hair_color_model');
+const Costume = require('../models/costume_model');
 
 exports.err = async (req, res, next) => {
     Common.logData(null, req);
@@ -15,10 +19,52 @@ exports.txtToImg = async (req, res, next) => {
     try {
         const url = 'http://112.169.41.227:7860/sdapi/v1/txt2img';
         const data = {
-            'steps': req.body['steps'],
+            // 'steps': req.body['steps'],
+            'steps': 20,
             'prompt': '((best quality, high_resolution, distinct_image)) ' + req.body['prompt'],
             'negative_prompt': 'worst quality, low quality, watermark, text, error, blurry, jpeg artifacts, worst quality, low quality, normal quality, jpeg artifacts, signature, username, artist name, wet, bad anatomy, EasyNegative, letterbox, tattoo, (text:1.1), letterboxed, (colored skin:1.2)',
             'sd_model_checkpoint': req.body['sd_model_checkpoint'],
+            'sampler_name': 'DPM++ 2M SDE Karras',
+            'denoising_strength': '0.5',
+            "cfg_scale": 7,
+            "enable_hr": true,
+            "hr_upscaler": "R-ESRGAN 4x+ Anime6B",
+            "hr_scale": 1.5,
+            "alwayson_scripts": {
+                "ADetailer": {
+                    "args": [
+                        true,
+                        {
+                            "ad_model": "face_yolov8n.pt",
+                            // "ad_prompt": "",
+                            // "ad_negative_prompt": "",
+                            // "ad_confidence": 0.3,
+                            // "ad_mask_min_ratio": 0.0,
+                            // "ad_mask_max_ratio": 1.0,
+                            // "ad_dilate_erode": 32,
+                            // "ad_x_offset": 0,
+                            // "ad_y_offset": 0,
+                            // "ad_mask_merge_invert": "None",
+                            // "ad_mask_blur": 4,
+                            // "ad_denoising_strength": 0.4,
+                            // "ad_inpaint_only_masked": true,
+                            // "ad_inpaint_only_masked_padding": 0,
+                            // "ad_use_inpaint_width_height": false,
+                            // "ad_inpaint_width": 512,
+                            // "ad_inpaint_height": 512,
+                            // "ad_use_steps": true,
+                            // "ad_steps": 28,
+                            // "ad_use_cfg_scale": false,
+                            // "ad_cfg_scale": 7.0,
+                            // "ad_restore_face": false,
+                            // "ad_controlnet_model": "None",
+                            // "ad_controlnet_weight": 1.0,
+                            // "ad_controlnet_guidance_start": 0.0,
+                            // "ad_controlnet_guidance_end": 1.0
+                        },
+                    ]
+                }
+            }
         };
         console.log(data)
         const resData = await Common.axiosPost(url, data);
@@ -37,8 +83,62 @@ exports.txtToImg = async (req, res, next) => {
 exports.checkPointList = async (req, res, next) => {
     Common.logData(null, req);
     try {
-        const checkPointList = await CheckPoint.findAll();
-        return Common.successResult(res, {check_point: checkPointList}, "체크포인트조회성공");
+        const list = await CheckPoint.findAll();
+        return Common.successResult(res, {check_point: list}, "체크포인트조회성공");
+    } catch (e) {
+        console.log(e)
+        return Common.errorResult(res, {}, 'ERR', 200);
+    }
+};
+
+exports.genderList = async (req, res, next) => {
+    Common.logData(null, req);
+    try {
+        console.log(req.query)
+        const list = await Gender.findAll(req.query['sub_gender']);
+        return Common.successResult(res, {list: list}, "성별 목록 조회성공");
+    } catch (e) {
+        console.log(e)
+        return Common.errorResult(res, {}, 'ERR', 200);
+    }
+};
+
+exports.hairColorList = async (req, res, next) => {
+    Common.logData(null, req);
+    try {
+        const list = await HairColor.findAll();
+        return Common.successResult(res, {list: list}, "헤어 컬러 목록 조회성공");
+    } catch (e) {
+        console.log(e)
+        return Common.errorResult(res, {}, 'ERR', 200);
+    }
+};
+
+
+exports.hairLengthList = async (req, res, next) => {
+    Common.logData(null, req);
+    try {
+        const list = await HairLength.findAll();
+        return Common.successResult(res, {list: list}, "헤어 길이 목록 조회성공");
+    } catch (e) {
+        console.log(e)
+        return Common.errorResult(res, {}, 'ERR', 200);
+    }
+};
+
+exports.hairCostumeList = async (req, res, next) => {
+    Common.logData(null, req);
+    try {
+        let gender = req.query['gender'];
+        if (gender === 'girl') {
+            gender = 1;
+        } else if (gender === 'boy') {
+            gender = 2;
+        } else {
+            gender = 0;
+        }
+        const list = await Costume.findAll(gender);
+        return Common.successResult(res, {list: list}, "코스튬 목록 조회성공");
     } catch (e) {
         console.log(e)
         return Common.errorResult(res, {}, 'ERR', 200);
