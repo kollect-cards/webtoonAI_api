@@ -566,6 +566,19 @@ module.exports = class Common {
         const response = await axios.request(options);
         return response.data;
     }
+    static async axiosGet(url, query) {
+        const options = {
+            method: 'get',
+            maxBodyLength: Infinity,
+            url: url + '?' + query,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+        };
+
+        const response = await axios.request(options);
+        return response.data;
+    }
     /**
      * 핸드폰번호 정규식 체크 +821012341234 형식
      */

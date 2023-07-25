@@ -27,4 +27,8 @@ router.get('/api/gender/list', TestController.genderList);
 router.get('/api/hair/color/list', TestController.hairColorList);
 router.get('/api/hair/length/list', TestController.hairLengthList);
 router.get('/api/costume/list', TestController.hairCostumeList);
+router.get('/api/progress', TestController.getProgress);
+
+router.get('/api/queue/finish', TestController.getQueueByFinish);
+router.post('/api/queue', TestController.postQueue);
 module.exports = router;

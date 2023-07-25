@@ -6,6 +6,8 @@ CONFIG.timezone = "Asia/Seoul"
 CONFIG.app = process.env.APP || 'dev';
 CONFIG.port = process.env.PORT || '3000';
 CONFIG.secret = process.env.SECRET || '-';
+CONFIG.queue_status = 'stop';
+
 
 CONFIG.bucket_url = process.env.BUCKET_URL || '';
 

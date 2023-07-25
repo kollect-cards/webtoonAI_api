@@ -4,6 +4,8 @@ const Gender = require('../models/gender_model');
 const HairLength = require('../models/hair_length_model');
 const HairColor = require('../models/hair_color_model');
 const Costume = require('../models/costume_model');
+const Queue = require('../models/queue_model');
+const FileReader =  require('filereader');
 
 exports.err = async (req, res, next) => {
     Common.logData(null, req);
@@ -114,7 +116,6 @@ exports.hairColorList = async (req, res, next) => {
     }
 };
 
-
 exports.hairLengthList = async (req, res, next) => {
     Common.logData(null, req);
     try {
@@ -139,6 +140,65 @@ exports.hairCostumeList = async (req, res, next) => {
         }
         const list = await Costume.findAll(gender);
         return Common.successResult(res, {list: list}, "코스튬 목록 조회성공");
+    } catch (e) {
+        console.log(e)
+        return Common.errorResult(res, {}, 'ERR', 200);
+    }
+};
+
+exports.getProgress = async (req, res, next) => {
+    Common.logData(null, req);
+    try {
+        // console.log(req.body);
+        const url = 'http://112.169.41.227:7860/sdapi/v1/progress';
+        const data ={};
+        const resData = await Common.axiosGet(url, data);
+
+        console.log({
+            progress: resData.progress,
+            eta_relative: resData.eta_relative,
+            state: resData.state,
+        })
+
+        return Common.successResult(res, {
+            progress: resData.progress,
+            eta_relative: resData.eta_relative,
+            state: resData.state,
+        }, "조회성공");
+    } catch (e) {
+        console.log(e)
+        return Common.errorResult(res, {}, 'ERR', 200);
+    }
+};
+
+exports.getQueueByFinish = async (req, res, next) => {
+    Common.logData(null, req);
+    try {
+        const list = await Queue.findByStatus_1();
+        //1개만 조회한다
+        let responseData = [];
+        if (list.length > 0) {
+            let base64Data = Buffer.from(list[0].image_data).toString('base64');
+            responseData.push(base64Data);
+            await Queue.updateStatusFinish(list[0]['queue_idx']);
+            return Common.successResult(res, {list: responseData}, "결과 조회");
+        }
+        return Common.successResult(res, {list: responseData}, "결과 실패");
+
+    } catch (e) {
+        console.log(e)
+        return Common.errorResult(res, {}, 'ERR', 200);
+    }
+};
+
+exports.postQueue = async (req, res, next) => {
+    Common.logData(null, req);
+    try {
+        let prompt = req.body['prompt'];
+        let sdModelCheckpoint = req.body['sd_model_checkpoint'];
+
+        const list = await Queue.insertOne(prompt, sdModelCheckpoint);
+        return Common.successResult(res, {list: list}, "대기열 등록 성공");
     } catch (e) {
         console.log(e)
         return Common.errorResult(res, {}, 'ERR', 200);
