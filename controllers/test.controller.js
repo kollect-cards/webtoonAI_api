@@ -3,6 +3,9 @@ const CheckPoint = require('../models/check_point_model');
 const Gender = require('../models/gender_model');
 const HairLength = require('../models/hair_length_model');
 const HairColor = require('../models/hair_color_model');
+const HairStyle = require('../models/hair_style_model');
+const CutsecnPose = require('../models/cutsecn_pose_model');
+const CutsecnBack = require('../models/cutsecn_back_model');
 const Costume = require('../models/costume_model');
 const Queue = require('../models/queue_model');
 const FileReader =  require('filereader');
@@ -127,6 +130,17 @@ exports.hairLengthList = async (req, res, next) => {
     }
 };
 
+exports.hairStyleList = async (req, res, next) => {
+    Common.logData(null, req);
+    try {
+        const list = await HairStyle.findAll();
+        return Common.successResult(res, {list: list}, "헤어 스타일 목록 조회성공");
+    } catch (e) {
+        console.log(e)
+        return Common.errorResult(res, {}, 'ERR', 200);
+    }
+};
+
 exports.hairCostumeList = async (req, res, next) => {
     Common.logData(null, req);
     try {
@@ -140,6 +154,45 @@ exports.hairCostumeList = async (req, res, next) => {
         }
         const list = await Costume.findAll(gender);
         return Common.successResult(res, {list: list}, "코스튬 목록 조회성공");
+    } catch (e) {
+        console.log(e)
+        return Common.errorResult(res, {}, 'ERR', 200);
+    }
+};
+
+exports.cutsecnPoseList = async (req, res, next) => {
+    Common.logData(null, req);
+    try {
+        let gender = req.query['gender'];
+        let subCanvas = req.query['sub_canvas'];
+        if (gender === 'girl') {
+            gender = 1;
+        } else if (gender === 'boy') {
+            gender = 2;
+        } else {
+            gender = 0;
+        }
+        const list = await CutsecnPose.findAll(gender, subCanvas);
+        return Common.successResult(res, {list: list}, " 조회성공");
+    } catch (e) {
+        console.log(e)
+        return Common.errorResult(res, {}, 'ERR', 200);
+    }
+};
+
+exports.cutsecnBackList = async (req, res, next) => {
+    Common.logData(null, req);
+    try {
+        let gender = req.query['gender'];
+        if (gender === 'girl') {
+            gender = 1;
+        } else if (gender === 'boy') {
+            gender = 2;
+        } else {
+            gender = 0;
+        }
+        const list = await CutsecnBack.findAll(gender);
+        return Common.successResult(res, {list: list}, "조회성공");
     } catch (e) {
         console.log(e)
         return Common.errorResult(res, {}, 'ERR', 200);

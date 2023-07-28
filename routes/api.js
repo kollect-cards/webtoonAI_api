@@ -26,6 +26,9 @@ router.get('/api/checkPoint/list', TestController.checkPointList);
 router.get('/api/gender/list', TestController.genderList);
 router.get('/api/hair/color/list', TestController.hairColorList);
 router.get('/api/hair/length/list', TestController.hairLengthList);
+router.get('/api/hair/style/list', TestController.hairStyleList);
+router.get('/api/cutscene/pose/list', TestController.cutsecnPoseList);
+router.get('/api/cutscene/back/list', TestController.cutsecnBackList);
 router.get('/api/costume/list', TestController.hairCostumeList);
 router.get('/api/progress', TestController.getProgress);
 
