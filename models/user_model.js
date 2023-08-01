@@ -76,6 +76,11 @@ const User = {
         Common.errorCheck(result[1], `User.updateUserAgentWhenLogin(${userIdx}, ${agent}, ${accessToken}, ${refreshToken})`)
         return result;
     },
+    updateTempUserBySNS: async function (snsType, uniqueId, email, snsId, locale, agent, phoneNumber, friendCode, nickname, profileImg) {
+        const sqlQuery = 'UPDATE TB_USER SET email = ?, sns_id= ?, sns_type = ?, language = ?, agent = ?, last_login_dt = ? , friend_cd = ?, nickname = ?, profile_img = ? WHERE unique_id = ?';
+        const result = await pool.query(sqlQuery, [email, snsId, snsType, locale, agent, new Date(), friendCode, nickname, profileImg, uniqueId]);
+        return result;
+    },
 }
 
 module.exports = User

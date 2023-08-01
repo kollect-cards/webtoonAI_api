@@ -7,5 +7,7 @@ const errorCodeModel = {
 
     ERR_AUTH_GOOGLE_NO_TOKEN: {code: 10101, message: {kr: "'token' 파라매터 값 부족"}},
     ERR_AUTH_GOOGLE_NO_UNIQUE_ID: {code: 10102, message: {kr: "'unique_id' 파라매터 값 부족"}},
+
+    ERR_AUTH_LOGIN_GOOGLE_NOT_FIND_USER: {code: 10200, message: {kr: "조회되는 유저 없음 (회원가입가능)"}},
 }
 module.exports = {errorCodeModel};

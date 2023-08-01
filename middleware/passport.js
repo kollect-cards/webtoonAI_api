@@ -3,7 +3,6 @@ const { ExtractJwt } = require('passport-jwt');
 
 const JwtStrategy = require('passport-jwt').Strategy;            // JWT
 const LocalStrategy = require('passport-local').Strategy;        // Local
-const AppleStrategy = require('passport-apple').Strategy;
 const jwtconfig = require('../config/JWTconfig');
 
 const User = require('../models/user_model');
@@ -40,37 +39,6 @@ module.exports = function (passport) {
                 }
                 if (user) {
                     Common.logData(`USER_IDX [${jwt_payload.payload.user_idx}] | email: ${user.email}`);
-                    if (user.word_category_name === '초등학교') {
-                        user.word_category_display_name = '초등학교';
-                        user.word_category_code = 'D';
-                        user.word_category_name_2 = '초등학교';
-                        user.word_category_code_2 = 'D';
-                    }else if (user.word_category_name === '중학교') {
-                        user.word_category_display_name = '중학교';
-                        user.word_category_code = 'E';
-                        user.word_category_name_2 = '중학교';
-                        user.word_category_code_2 = 'E';
-                    }else if (user.word_category_name === '고등학교') {
-                        user.word_category_display_name = '수능';
-                        user.word_category_code = 'F';
-                        user.word_category_name_2 = '고등학교';
-                        user.word_category_code_2 = 'F';
-                    }else if (user.word_category_name === '토익') {
-                        user.word_category_display_name = '토익';
-                        user.word_category_code = 'G';
-                        user.word_category_name_2 = '토익';
-                        user.word_category_code_2 = 'G';
-                    }else if (user.word_category_name === '생활기초') {
-                        user.word_category_display_name = '생활기초';
-                        user.word_category_code = 'I';
-                        user.word_category_name_2 = '초등학교,중학교,생활기초';
-                        user.word_category_code_2 = 'D,E,I';
-                    }else if (user.word_category_name === '생활고급') {
-                        user.word_category_display_name = '생활고급';
-                        user.word_category_code = 'H';
-                        user.word_category_name_2 = '고등학교,토익,생활고급';
-                        user.word_category_code_2 = 'F,G,H';
-                    }
                     return done(null, user);
                 } else {
                     Common.logData(`USER_IDX [${jwt_payload.payload.user_idx}]: 조회되는 유저가 없는데요? `)
@@ -118,22 +86,4 @@ module.exports = function (passport) {
             return done(null, user);
         })
     );
-
-    passport.use('apple', new AppleStrategy({
-        clientID: CONFIG.oauth.apple.clientID,
-        teamID: CONFIG.oauth.apple.teamID,
-        callbackURL: CONFIG.oauth.apple.redirectURL,
-        keyID: CONFIG.oauth.apple.keyID,
-        privateKeyLocation: CONFIG.oauth.apple.keyLocation
-    }, function(accessToken, refreshToken, idToken, profile, cb) {
-        cb(null, accessToken.body.id_token);
-    }));
-
-    // passport.serializeUser((user,done)=>{
-    //     done(null,user);
-    // });
-    // passport.deserializeUser((user,done)=>{
-    //     done(null,user);
-    // });
-
 };
