@@ -241,3 +241,149 @@ exports.signSNS = async (req, res, next) => {
         return Common.errorResult(res, {}, 'ERR', 200);
     }
 };
+
+
+exports.loginAppleWebView = async (req, res, next) => {
+    Common.logData(null, req);
+    return res.send(`
+        <html>
+            <head>
+                <meta name="appleid-signin-client-id" content="${CONFIG.oauth.apple.clientID}">
+                <meta name="appleid-signin-scope" content="email name">
+                <meta name="appleid-signin-redirect-uri" content="${CONFIG.oauth.apple.redirectURL}">
+                <meta name="appleid-signin-use-popup" content="false">
+            </head>
+            <body>
+                <div id="appleid-signin" data-color="black" data-border="true" data-type="sign in"></div>
+                <script type="text/javascript" src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"></script>
+            </body>
+        </html>
+    `);
+}
+
+exports.loginApple = async (req, res, next) => {
+    Common.logData(null, req);
+    Common.logData('      : ======= APPLE LOGIN ... ')
+    if (req.body.token == undefined || req.body.token == null || req.body.token == '') {
+        Common.logData('      : WEBVIEW LOGIN CALLBACK OR ERROR')
+        passport.authenticate('apple', async function (err, idToken, info) {
+            const userObj = jwt.decode(idToken);
+            if (err) {
+                Common.logData(`      : ======= APPLE LOGIN: FAIL 9999`);
+                return res.send(`
+                        <html>
+                            <body>
+                                debug message: appleLoginFail('로그인실패,9999,관리자에게문의해주세요.')
+                            </body>
+                            <script type="text/javascript">
+                            window.onload = function() {
+                                Android.appleLoginFail('로그인실패,9999,관리자에게문의해주세요.');
+                                window.webkit.messageHandlers.appleLoginFail.pushMessage('로그인실패,9999,관리자에게문의해주세요.');    
+                            }
+                            </script>
+                        </html>
+                    `);
+            } else {
+                Common.logData(`      : ======= APPLE LOGIN: ${userObj.email},${userObj.sub},${userObj.email.split('@')[0]}`);
+                const user = await User.findOne(null, userObj.email);
+                if (user === null) {
+                    Common.logData(`      : ======= APPLE LOGIN: FAIL 10109`);
+                    return res.send(`
+                        <html>      
+                            <body>
+                                debug message: appleLoginFail('로그인실패,10109,${idToken}'))
+                            </body>
+                            <script type="text/javascript">
+                            window.onload = function() {
+                                Android.appleLoginFail('로그인실패,10109,${idToken}');
+                                window.webkit.messageHandlers.appleLoginFail.pushMessage('로그인실패,10109,${idToken}');
+                            }
+                            </script>
+                        </html>
+                        `);
+                } else if (user.delete_dt != null) {
+                    Common.logData(`      : ======= APPLE LOGIN: FAIL 10109 (탈퇴한유저)`);
+                    return res.send(`
+                        <html>      
+                            <body>
+                                debug message: appleLoginFail('로그인실패,10109,${idToken}'))
+                            </body>
+                            <script type="text/javascript">
+                            window.onload = function() {
+                                Android.appleLoginFail('로그인실패,10109,${idToken}'));
+                                window.webkit.messageHandlers.appleLoginFail.pushMessage('로그인실패,10109,${idToken}');
+                            }
+                            </script>
+                        </html>
+                        `);
+
+                }else if (user.sns_type !== 'apple') {
+                    Common.logData(`      : ======= APPLE LOGIN: FAIL 10112 (다른 SNS으로 가입한 유저: ${user.sns_type})`);
+                    return res.send(`
+                        <html>      
+                            <body>
+                                debug message: appleLoginFail('로그인실패,10112,${user.sns_type}'))
+                            </body>
+                            <script type="text/javascript">
+                            window.onload = function() {
+                                Android.appleLoginFail('로그인실패,10112,${idToken}'));
+                                window.webkit.messageHandlers.appleLoginFail.pushMessage('로그인실패,10112,${user.sns_type}');
+                            }
+                            </script>
+                        </html>
+                        `);
+
+                }else {
+                    const loginTime = Common.getDateString(2);
+                    const accessToken = jwt.sign({payload: {user_idx: user.user_idx, login_time: loginTime},}, jwtConfig.secret, jwtConfig.option);
+                    const refreshToken = jwt.sign({payload: {},}, jwtConfig.secret, jwtConfig.optionRefreshToken);
+                    await User.updateUserAgentWhenLogin(user.user_idx, req.headers['user-agent'], accessToken, refreshToken, loginTime);
+                    return res.send(`
+                        <html>      
+                            <body>
+                                debug message: appleLoginSuccess('로그인성공,20000,${user.user_idx}#${accessToken}#${refreshToken}')
+                            </body>
+                            <script type="text/javascript">
+                            window.onload = function() {
+                                Android.appleLoginSuccess('로그인성공,20000,${user.user_idx}#${accessToken}#${refreshToken}');
+                                window.webkit.messageHandlers.appleLoginSuccess.pushMessage('로그인성공,20000,${user.user_idx}#${accessToken}#${refreshToken}');
+                            }
+                            </script>
+                        </html>
+                        `);
+                }
+            }
+        })(req, res, next);
+        // return Common.errorResult(res, {}, 'ERR_AUTH_GOOGLE_NO_TOKEN', 200);
+    } else {
+        Common.logData('      : API LOGIN')
+        try {
+            const idToken = req.body['token'];
+            const ticket = jwt.decode(idToken);
+
+            Common.logData(ticket.email, '*********  > ')
+            let user = await User.findOne(null, ticket.email);
+            if (user === null) {
+                return Common.errorResult(res, {}, 'ERR_AUTH_LOGIN_APPLE_NOT_FIND_USER', 200);
+            }else if (user.delete_dt != null) {
+                if (Common.getNowAndDateDiffToDays(user.delete_dt) < 7){
+                    Common.logData('      : ERR_AUTH_LOGIN_KAKAO_NOT_FIND_USER 2 ')
+                    return Common.errorResult(res, {}, 'ERR_AUTH_NUMBER_CHECK_SEVEN_DAYS_WITHDRAWAL', 200);
+                }
+            }else if (user.sns_type !== 'apple') {
+                Common.logData('      : ERR_AUTH_LOGIN_NOT_MATCHING_SNS_TYPE: ' + user.sns_type);
+                return Common.errorResult(res, {}, 'ERR_AUTH_LOGIN_NOT_MATCHING_SNS_TYPE', 200);
+            }
+            const loginTime = Common.getDateString(2);
+            const accessToken = jwt.sign({payload: {user_idx: user.user_idx, login_time: loginTime},}, jwtConfig.secret, jwtConfig.option);
+            const refreshToken = jwt.sign({payload: {},}, jwtConfig.secret, jwtConfig.optionRefreshToken);
+            await User.updateUserAgentWhenLogin(user.user_idx, req.headers['user-agent'], accessToken, refreshToken, loginTime);
+            let data = {user_idx: user.user_idx, accessToken: accessToken, refresh_token: refreshToken, sign_route: null, friend_code: null, skip_input_friend_code: false};
+            return Common.successResult(res, data);
+        } catch (e) {
+            Sentry.captureException(e);
+            return Common.errorResult(res, {}, 'ERR', 200);
+        }
+    }
+}
+
