@@ -25,8 +25,6 @@ router.post('/auth/sign/:sns_type', AuthController.signSNS);
 router.post('/auth/login/non-member', AuthController.loginNonMember);
 router.post('/auth/sign/non-member/', AuthController.signNonMember);
 
-
-router.post('/api/character/create', TestController.txtToImg);
 router.get('/api/checkPoint/list', TestController.checkPointList);
 router.get('/api/gender/list', TestController.genderList);
 router.get('/api/hair/color/list', TestController.hairColorList);
@@ -40,6 +38,17 @@ router.get('/api/progress', TestController.getProgress);
 // NEW
 router.get('/character-set/check_point/list', auth, characterSetController.checkPointList);
 
+
+router.post('/api/img/create', TestController.txtToImg);
 router.get('/api/queue/finish', TestController.getQueueByFinish);
 router.post('/api/queue', TestController.postQueue);
 module.exports = router;
+
+
+
+
+
+
+
+
+
