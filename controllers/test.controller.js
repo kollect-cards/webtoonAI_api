@@ -1,24 +1,10 @@
 const Common = require('../helpers/common');
-const CheckPoint = require('../models/check_point_model');
-const Gender = require('../models/gender_model');
-const HairLength = require('../models/hair_length_model');
-const HairColor = require('../models/hair_color_model');
-const HairStyle = require('../models/hair_style_model');
-const CutsecnPose = require('../models/cutsecn_pose_model');
-const CutsecnBack = require('../models/cutsecn_back_model');
-const Costume = require('../models/costume_model');
 const Queue = require('../models/queue_model');
-const FileReader =  require('filereader');
+const firebaseApp = require("../services/firebase.service");
+const firestore = firebaseApp.firestore();
 
-exports.err = async (req, res, next) => {
-    Common.logData(null, req);
-    try {
-        return Common.successResult(res, {});
-    } catch (e) {
-        return Common.errorResult(res, {}, 'ERR_WORD_CATEGORY_FIND_USER', 200);
-    }
-};
-
+// SD 서버에 API 를 호출하는 곳으로, 테스트할때 사용한다.
+// 여기서 이미지 생성 검증이 끝나면 runQueue._postSdServer 에 반영한다.
 exports.txtToImg = async (req, res, next) => {
     Common.logData(null, req);
     try {
@@ -85,173 +71,74 @@ exports.txtToImg = async (req, res, next) => {
     }
 };
 
-exports.checkPointList = async (req, res, next) => {
+
+// 파이어베이스 데이터베이스 데이터 CRUD 테스트
+exports.addTest = async (req, res, next) => {
     Common.logData(null, req);
     try {
-        const list = await CheckPoint.findAll();
-        return Common.successResult(res, {check_point: list}, "체크포인트조회성공");
+        const data = req.body;
+        const user = await firestore.collection("CRUD_TEST").doc().set({name:'TEST', age: 14});
+        return Common.successResult(res, {list: []}, "테스트 데이터 등록 성공");
     } catch (e) {
         console.log(e)
         return Common.errorResult(res, {}, 'ERR', 200);
     }
 };
-
-exports.genderList = async (req, res, next) => {
+exports.getTest = async (req, res, next) => {
     Common.logData(null, req);
     try {
-        console.log(req.query)
-        const list = await Gender.findAll(req.query['sub_gender']);
-        return Common.successResult(res, {list: list}, "성별 목록 조회성공");
-    } catch (e) {
-        console.log(e)
-        return Common.errorResult(res, {}, 'ERR', 200);
-    }
-};
-
-exports.hairColorList = async (req, res, next) => {
-    Common.logData(null, req);
-    try {
-        const list = await HairColor.findAll();
-        return Common.successResult(res, {list: list}, "헤어 컬러 목록 조회성공");
-    } catch (e) {
-        console.log(e)
-        return Common.errorResult(res, {}, 'ERR', 200);
-    }
-};
-
-exports.hairLengthList = async (req, res, next) => {
-    Common.logData(null, req);
-    try {
-        const list = await HairLength.findAll();
-        return Common.successResult(res, {list: list}, "헤어 길이 목록 조회성공");
-    } catch (e) {
-        console.log(e)
-        return Common.errorResult(res, {}, 'ERR', 200);
-    }
-};
-
-exports.hairStyleList = async (req, res, next) => {
-    Common.logData(null, req);
-    try {
-        const list = await HairStyle.findAll();
-        return Common.successResult(res, {list: list}, "헤어 스타일 목록 조회성공");
-    } catch (e) {
-        console.log(e)
-        return Common.errorResult(res, {}, 'ERR', 200);
-    }
-};
-
-exports.hairCostumeList = async (req, res, next) => {
-    Common.logData(null, req);
-    try {
-        let gender = req.query['gender'];
-        if (gender === 'girl') {
-            gender = 1;
-        } else if (gender === 'boy') {
-            gender = 2;
+        const snapshot = await firestore.collection("CRUD_TEST").get();
+        const data = snapshot;
+        const usersArray = [];
+        if (data.empty) {
+            return Common.errorResult(res, {}, 'ERR', 200);
         } else {
-            gender = 0;
+            snapshot.forEach((doc) => {
+                usersArray.push({id: doc.id, name: doc.data().name, age: doc.data().age});
+            });
         }
-        const list = await Costume.findAll(gender);
-        return Common.successResult(res, {list: list}, "코스튬 목록 조회성공");
+        return Common.successResult(res, {list: usersArray}, "테스트 데이터 조회 성공");
     } catch (e) {
         console.log(e)
         return Common.errorResult(res, {}, 'ERR', 200);
     }
 };
 
-exports.cutsecnPoseList = async (req, res, next) => {
+exports.updateTest = async (req, res, next) => {
     Common.logData(null, req);
     try {
-        let gender = req.query['gender'];
-        let subCanvas = req.query['sub_canvas'];
-        if (gender === 'girl') {
-            gender = 1;
-        } else if (gender === 'boy') {
-            gender = 2;
+        const newUserData = req.body;
+        const userID = req.params.id;
+        const userSnapshot = await firestore.collection("CRUD_TEST").doc(userID);
+        const userData = await userSnapshot.get();
+
+        if (!userData.exists) {
+            res.status(404).send("User with given ID not found");
         } else {
-            gender = 0;
+            userSnapshot.update(newUserData);
         }
-        const list = await CutsecnPose.findAll(gender, subCanvas);
-        return Common.successResult(res, {list: list}, " 조회성공");
+        return Common.successResult(res, {list: usersArray}, "테스트 데이터 조회 성공");
     } catch (e) {
         console.log(e)
         return Common.errorResult(res, {}, 'ERR', 200);
     }
 };
 
-exports.cutsecnBackList = async (req, res, next) => {
+// 파이어베이스 푸시 테스트
+exports.pushTest = async (req, res, next) => {
     Common.logData(null, req);
     try {
-        let gender = req.query['gender'];
-        if (gender === 'girl') {
-            gender = 1;
-        } else if (gender === 'boy') {
-            gender = 2;
+        const snapshot = await firestore.collection("CRUD_TEST").get();
+        const data = snapshot;
+        const usersArray = [];
+        if (data.empty) {
+            return Common.errorResult(res, {}, 'ERR', 200);
         } else {
-            gender = 0;
+            snapshot.forEach((doc) => {
+                usersArray.push({name: doc.data().name, age: doc.data().age});
+            });
         }
-        const list = await CutsecnBack.findAll(gender);
-        return Common.successResult(res, {list: list}, "조회성공");
-    } catch (e) {
-        console.log(e)
-        return Common.errorResult(res, {}, 'ERR', 200);
-    }
-};
-
-exports.getProgress = async (req, res, next) => {
-    Common.logData(null, req);
-    try {
-        // console.log(req.body);
-        const url = 'http://112.169.41.227:7860/sdapi/v1/progress';
-        const data ={};
-        const resData = await Common.axiosGet(url, data);
-
-        console.log({
-            progress: resData.progress,
-            eta_relative: resData.eta_relative,
-            state: resData.state,
-        })
-
-        return Common.successResult(res, {
-            progress: resData.progress,
-            eta_relative: resData.eta_relative,
-            state: resData.state,
-        }, "조회성공");
-    } catch (e) {
-        console.log(e)
-        return Common.errorResult(res, {}, 'ERR', 200);
-    }
-};
-
-exports.getQueueByFinish = async (req, res, next) => {
-    Common.logData(null, req);
-    try {
-        const list = await Queue.findByStatus_1();
-        //1개만 조회한다
-        let responseData = [];
-        if (list.length > 0) {
-            let base64Data = Buffer.from(list[0].image_data).toString('base64');
-            responseData.push(base64Data);
-            await Queue.updateStatusFinish(list[0]['queue_idx']);
-            return Common.successResult(res, {list: responseData}, "결과 조회");
-        }
-        return Common.successResult(res, {list: responseData}, "결과 실패");
-
-    } catch (e) {
-        console.log(e)
-        return Common.errorResult(res, {}, 'ERR', 200);
-    }
-};
-
-exports.postQueue = async (req, res, next) => {
-    Common.logData(null, req);
-    try {
-        let prompt = req.body['prompt'];
-        let sdModelCheckpoint = req.body['sd_model_checkpoint'];
-
-        const list = await Queue.insertOne(prompt, sdModelCheckpoint);
-        return Common.successResult(res, {list: list}, "대기열 등록 성공");
+        return Common.successResult(res, {list: usersArray}, "테스트 데이터 조회 성공");
     } catch (e) {
         console.log(e)
         return Common.errorResult(res, {}, 'ERR', 200);

@@ -7,13 +7,6 @@ const CONFIG = require('../config/config');
 console.log('🔴ENV: ' + CONFIG.app);
 console.log('🔴INSTANCE_ID : ' + process.env.INSTANCE_ID );
 require('../cron/runQueue');
-// if ((process.env.APP === 'dev' && process.env.INSTANCE_ID === undefined) || (process.env.APP === 'prod' && process.env.INSTANCE_ID === '0')) {
-//   console.log(`🔴CRON START (1) [${process.env.APP}, ${process.env.INSTANCE_ID}]`);
-//   require('../cron/runQueue');
-// }else {
-//   console.log(`🔴CRON START (2) [${process.env.APP}, ${process.env.INSTANCE_ID}]`);
-//   // require('../cron/---');
-// }
 
 const port = normalizePort(CONFIG.port);
 app.set('port', port);

@@ -7,6 +7,7 @@ CONFIG.app = process.env.APP || 'dev';
 CONFIG.port = process.env.PORT || '3000';
 CONFIG.secret = process.env.SECRET || '-';
 CONFIG.queue_status = 'stop';
+CONFIG.queue_status_standard = 'stop';
 
 
 CONFIG.bucket_url = process.env.BUCKET_URL || '';
@@ -22,7 +23,14 @@ CONFIG.aws_key = process.env.aws_access_key_id || 'none';
 CONFIG.aws_secret = process.env.aws_secret_access_key || 'none';
 
 CONFIG.firebase = {
-    service_account_key: process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_KEY || 'none'
+    api_key: process.env.API_KEY || 'none',
+    auth_domain: process.env.AUTH_DOMAIN || 'none',
+    database_url: process.env.DATABASE_URL || 'none',
+    project_id: process.env.PROJECT_ID || 'none',
+    storage_bucket: process.env.STORAGE_BUCKET || 'none',
+    messaging_sender_id: process.env.MESSAGING_SENDER_ID || 'none',
+    app_id: process.env.APP_ID || 'none',
+    service_account_path: process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_KEY
 }
 
 CONFIG.naver = {
@@ -54,16 +62,6 @@ CONFIG.oauth = {
 };
 
 CONFIG.isShowLog = 1;
-
-CONFIG.giftshow = {
-    custom_auth_code: process.env.GIFTISHOW_CUSTOM_AUTH_CODE,
-    custom_auth_token: process.env.GIFTISHOW_CUSTOM_AUTH_TOKEN,
-    dev_yn: process.env.GIFTISHOW_DEV_YN,
-    banner_id: process.env.GIFTISHOW_BANNER_ID,
-    card_id: process.env.GIFTISHOW_CARD_ID,
-    user_id: process.env.GIFTISHOW_USER_ID,
-}
-
 CONFIG.schedule = null;
 CONFIG.sentry_dns=process.env.SENTRY_DNS;
 
