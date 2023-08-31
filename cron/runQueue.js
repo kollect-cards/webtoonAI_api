@@ -4,7 +4,7 @@ const Queue = require("../models/queue_model");
 const Config = require("../config/config");
 const firebaseApp = require("../services/firebase.service");
 const firestore = firebaseApp.firestore();
-const {getMessaging} = require("firebase-admin/messaging");
+const firebaseAdmin = require("firebase-admin");
 manager = new CronJobManager();
 
 const _sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
