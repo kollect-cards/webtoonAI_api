@@ -41,7 +41,7 @@ manager.add('runQueue', '* * * * *', async () => {
                             }
                         }
                     }else {
-                        // await Queue.deleteStatusFinish(); // 완료된 큐 삭제
+                        await Queue.deleteStatusFinish(); // 완료된 큐 삭제
                         await _sleep(3000);
                         console.log(`QUEUE 쉬는중 ... `);
                     }
