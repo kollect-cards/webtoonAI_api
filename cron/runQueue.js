@@ -35,7 +35,7 @@ manager.add('runQueue', '* * * * *', async () => {
                             } else {
                                 objectSnapshot.update({create_status: 'finish'}); //
                                 if (pushToken !== null && pushToken !== undefined && pushToken !== '') {
-                                    _postPushMessage('WEBTOON_AI', `${makeType} 생성 완료!`, pushToken);
+                                    _postPushMessage('WEBTOON_AI', `${makeType} 생성 완료!`, [pushToken]);
                                 }
                                 console.log(`image 생성 완료! ${Common.getDateString(1)}`);
                             }
@@ -54,6 +54,7 @@ manager.add('runQueue', '* * * * *', async () => {
 
     }catch (e) {
         console.log(e);
+        Config.queue_status = 'stop';
     }
 });
 
