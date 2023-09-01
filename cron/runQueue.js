@@ -21,9 +21,13 @@ manager.add('runQueue', '* * * * *', async () => {
                     if (basicReadyQueue.length > 0) {
                         for (let i = 0; i < basicReadyQueue.length; i++) {
                             console.log(`image 생성중 ... ${basicReadyQueue[i]['queue_idx']}`);
-                            const result = await _postSdServer('http://112.169.41.227:7860', basicReadyQueue[i]['prompt'], basicReadyQueue[i]['checkpoint'], basicReadyQueue[i]['canvas_type'],);
-                            let binaryImage = Buffer.from(result[0], 'base64');
-                            await Queue.updateOne(basicReadyQueue[i]['queue_idx'], binaryImage, result === null ? 2 : 1);
+                            let images = [];
+                            for (let j = 0; j < basicReadyQueue[i]['image_cnt']; j++) {
+                                const resultBySdServer = await _postSdServer('http://112.169.41.227:7860', basicReadyQueue[i]['prompt'], basicReadyQueue[i]['checkpoint'], basicReadyQueue[i]['canvas_type'],);
+                                let binaryImage = Buffer.from(resultBySdServer[0], 'base64');
+                                images.push(binaryImage);
+                            }
+                            await Queue.updateOne(basicReadyQueue[i]['queue_idx'], images, images.length === basicReadyQueue[i]['image_cnt'] ? 1 : 2);
                             const objectID = basicReadyQueue[i]['object_id'];
                             const makeType = basicReadyQueue[i]['make_type']; // preset or cutscene
                             const pushToken = basicReadyQueue[i]['push_token'];

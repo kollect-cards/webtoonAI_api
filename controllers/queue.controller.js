@@ -16,8 +16,9 @@ exports.postQueue = async (req, res, next) => {
         let sdModelCheckpoint = req.body['sd_model_checkpoint']; // 체크아웃포인트
         let canvasType = req.body['canvas_type'];                // 캔버스타입 (컷씬인 경우에만 저장) 1: square (정사각), 2: vertical  (가로 긴 직사각), 3 horizontal (세로 긴 직사각)
         let pushToken = req.body['push_token'];                  // 푸시토큰 / 알림 발송하는 경우에만 값이 있음
+        let imageCnt = req.body['image_cnt'];                    // 이미지 생성 개수
 
-        const list = await Queue.insertOne(userId, objectId, userLevel, makeType, prompt, sdModelCheckpoint, canvasType, pushToken);
+        const list = await Queue.insertOne(userId, objectId, userLevel, makeType, prompt, sdModelCheckpoint, canvasType, pushToken, imageCnt);
         return Common.successResult(res, {}, "대기열 등록 성공");
     } catch (e) {
         console.log(e)
@@ -32,11 +33,19 @@ exports.getQueueByFinish = async (req, res, next) => {
         let objectId = req.query['object_id'];
         let makeType = req.query['make_type']; //프리셋(preset) OR 컷씬(cutscene)
         const list = await Queue.findByStatus_1(objectId, makeType);
-        //1개만 조회한다
-        let responseData = [];
+        let imageList = [];
         if (list.length > 0) {
-            let base64Data = Buffer.from(list[0].image_data).toString('base64');
-            responseData.push(base64Data);
+            let imageData0 = Buffer.from(list[0].image_data).toString('base64');
+            imageList.push(imageData0);
+            if (list[0].image_data_1 !== null) {
+                imageList.push(Buffer.from(list[0].image_data_1).toString('base64'));
+            }
+            if (list[0].image_data_2 !== null) {
+                imageList.push(Buffer.from(list[0].image_data_2).toString('base64'));
+            }
+            if (list[0].image_data_3 !== null) {
+                imageList.push(Buffer.from(list[0].image_data_3).toString('base64'));
+            }
             await Queue.updateStatusFinish(list[0]['queue_idx']);
 
             const objectSnapshot = await firestore.collection(list[0]['make_type']).doc(list[0]['object_id']);
@@ -47,9 +56,9 @@ exports.getQueueByFinish = async (req, res, next) => {
             } else {
                 objectSnapshot.update({create_status: 'view_completed'}); // 파이어베이스 데이터 업데이트
             }
-            return Common.successResult(res, {list: responseData}, "결과 조회");
+            return Common.successResult(res, {list: imageList}, "결과 조회");
         }
-        return Common.successResult(res, {list: responseData}, "결과 실패");
+        return Common.successResult(res, {list: imageList}, "결과 실패");
 
     } catch (e) {
         console.log(e)
