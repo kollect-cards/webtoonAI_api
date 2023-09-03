@@ -98,8 +98,8 @@ manager.add('runQueue', '* * * * *', async () => {
 
 const _postSdServer = async (sdServerUrl, prompt, checkpoint, canvasType) => {
     //1: square (정사각) 512*512, 2: vertical  (가로 긴 직사각) 768*512, 3: horizontal (세로 긴 직사각) 512*768
-    let width = canvasType === 'vertical' ? 768 : 512;
-    let height = canvasType === 'horizontal' ? 768 : 512;
+    let width = canvasType.toLowerCase() === 'vertical' ? 768 : 512;
+    let height = canvasType.toLowerCase() === 'horizontal' ? 768 : 512;
 
     try {
         const data = {
