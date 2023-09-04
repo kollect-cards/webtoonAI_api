@@ -32,3 +32,18 @@ forever list
   - test
     - 파이어베이스 데이터스토어 또는 SD 서버와 통신하는 테스트 API가 있다.
     - SD 서버에 여러 변수값을 조정하여 이미지 생성 테스트를 할 수 있다.
+
+### 코드 배포 방법
+1. 내부 소스 코드 수정후 git commit / push 
+2. 터미널 프로그램을 이용하여 서버 접속
+```
+ssh -i /{key.pem path}/kollect-key.pem ubuntu@43.201.196.118
+# .pem file 의 권한 400 인지 체크 
+```
+3. 접속 후 AI 프로젝트로 이동 및 git pull
+```
+cd webtoonAI_api/
+git pull origin main
+# 만약 코드 충돌이 일어난다면: git reset --hard origin main
+```
+4. tail -f log 로 배포 로그 확인 

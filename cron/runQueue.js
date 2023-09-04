@@ -19,31 +19,7 @@ manager.add('runQueue', '* * * * *', async () => {
                     const basicReadyQueue = await Queue.findByStatus_0('basic|standard|premium');
                     // const basicReadyQueue = await Queue.findByStatus_0('basic'); // 스탠다드 / 프리미엄 서버 생기면 주석 해제
                     if (basicReadyQueue.length > 0) {
-                        for (let i = 0; i < basicReadyQueue.length; i++) {
-                            console.log(`image 생성중 ... ${basicReadyQueue[i]['queue_idx']}`);
-                            let images = [];
-                            for (let j = 0; j < basicReadyQueue[i]['image_cnt']; j++) {
-                                const resultBySdServer = await _postSdServer('http://112.169.41.227:7860', basicReadyQueue[i]['prompt'], basicReadyQueue[i]['checkpoint'], basicReadyQueue[i]['canvas_type'],);
-                                let binaryImage = Buffer.from(resultBySdServer[0], 'base64');
-                                images.push(binaryImage);
-                            }
-                            await Queue.updateOne(basicReadyQueue[i]['queue_idx'], images, images.length === basicReadyQueue[i]['image_cnt'] ? 1 : 2);
-                            const objectID = basicReadyQueue[i]['object_id'];
-                            const makeType = basicReadyQueue[i]['make_type']; // preset or cutscene
-                            const pushToken = basicReadyQueue[i]['push_token'];
-                            const objectSnapshot = await firestore.collection(makeType).doc(objectID);
-                            const objectData = await objectSnapshot.get();
-                            if (!objectData.exists) {
-                                objectSnapshot.update({create_status: 'error'}); // pending: 대기중, error: 에러, finish: 생성완료, view_completed: 조회완료,  saved: 사용자 저장까지 완료
-                                console.log(`image 생성 저장 실패! ${Common.getDateString(1)}`);
-                            } else {
-                                objectSnapshot.update({create_status: 'finish'}); //
-                                if (pushToken !== null && pushToken !== undefined && pushToken !== '') {
-                                    _postPushMessage('WEBTOON_AI', `${makeType} 생성 완료!`, [pushToken]);
-                                }
-                                console.log(`image 생성 완료! ${Common.getDateString(1)}`);
-                            }
-                        }
+                        await _readyQueueMakeImage(basicReadyQueue, 'basic');
                     }else {
                         await Queue.deleteStatusFinish(); // 완료된 큐 삭제
                         await _sleep(3000);
@@ -72,13 +48,7 @@ manager.add('runQueue', '* * * * *', async () => {
 //                 if (status['running'] === 1) { // 1이면 큐 조회 실행, 0이면 아무것도 안함 (DB.TB_QUEUE_STATUS.running = 1 인경우 실행하며 종료하고 싶을때에는 0으로 업데이트
 //                     const readyQueue = await Queue.findByStatus_0('standard|premium');
 //                     if (readyQueue.length > 0) {
-//                         for (let i = 0; i < readyQueue.length; i++) {
-//                             console.log(`스탠다드|프리미엄 image 생성중 ... ${readyQueue[i]['queue_idx']}`);
-//                             const result = await _postSdServer('스탠다드|프리미엄용 SD SERVER URL 입력하세요', readyQueue[i]['prompt'], readyQueue[i]['checkpoint'], readyQueue[i]['canvas_type'],);
-//                             let binaryImage = Buffer.from(result[0], 'base64');
-//                             await Queue.updateOne(readyQueue[i]['queue_idx'], binaryImage, result === null ? 2 : 1);
-//                             console.log(`스탠다드|프리미엄 image 생성 완료! ${Common.getDateString(1)}`);
-//                         }
+//                          await _readyQueueMakeImage(basicReadyQueue, 'premium');
 //                     }else {
 //                         await _sleep(3000);
 //                         console.log(`QUEUE 쉬는중 ... `);
@@ -97,23 +67,30 @@ manager.add('runQueue', '* * * * *', async () => {
 
 
 const _postSdServer = async (sdServerUrl, prompt, checkpoint, canvasType) => {
-    //1: square (정사각) 512*512, 2: vertical  (가로 긴 직사각) 768*512, 3: horizontal (세로 긴 직사각) 512*768
-    let width = canvasType.toLowerCase() === 'vertical' ? 768 : 512;
-    let height = canvasType.toLowerCase() === 'horizontal' ? 768 : 512;
-
+    //1: square (정사각) 512*512, 2: vertical  (세로 긴 직사각) 768*512, 3: horizontal (가로 긴 직사각) 512*768
+    let width = canvasType.toLowerCase() === 'vertical' || canvasType.toLowerCase() === 'square' ? 512 : 768;
+    let height = canvasType.toLowerCase() === 'horizontal' || canvasType.toLowerCase() === 'square' ? 512 : 768;
+    console.log(canvasType, width, height, prompt)
     try {
         const data = {
             // 'steps': req.body['steps'],
             'steps': 20,
             'prompt': '((best quality, high_resolution, distinct_image)) ' + prompt,
             'negative_prompt': 'worst quality, low quality, watermark, text, error, blurry, jpeg artifacts, worst quality, low quality, normal quality, jpeg artifacts, signature, username, artist name, wet, bad anatomy, EasyNegative, letterbox, tattoo, (text:1.1), letterboxed, (colored skin:1.2)',
-            'sd_model_checkpoint': checkpoint,
+            "override_settings": {
+                "sd_model_checkpoint": checkpoint
+            },
+            "override_settings_restore_afterwards": true,
+            "sd_model_checkpoint": checkpoint,
             'sampler_name': 'DPM++ 2M SDE Karras',
             'denoising_strength': '0.5',
             "cfg_scale": 7,
             "enable_hr": true,
             "hr_upscaler": "R-ESRGAN 4x+ Anime6B",
-            "hr_scale": 1.5,
+            // "hr_scale": 1.5, // width, height 값에서 1.5배씩 곱한다
+            "hr_scale": 1.0,
+            "width": width,
+            "height": height,
             "alwayson_scripts": {
                 "ADetailer": {
                     "args": [
@@ -152,5 +129,46 @@ const _postPushMessage = (title, body, tokens)=>{
         .catch((error) => {
             console.log('Error sending message:', error);
         });
+}
+
+// 이미지 생성 함수
+const _readyQueueMakeImage = async (basicReadyQueue, subLevel) => {
+    const basicServer = 'http://112.169.41.227:7860';
+    const premiumServer = '//아직없음';
+    let baseServer = subLevel === 'basic' ? basicServer : premiumServer;
+    for (let i = 0; i < basicReadyQueue.length; i++) {
+        console.log(`image 생성중 ... ${basicReadyQueue[i]['queue_idx']}`);
+        let images = [];
+        const makeType = basicReadyQueue[i]['make_type']; // preset or cutscene
+        let prompt = basicReadyQueue[i]['prompt'];
+        if (makeType === 'preset') {
+            prompt += ',upper_body'; // 프리셋은 상반신만 나오도록 처리
+        }
+        for (let j = 0; j < basicReadyQueue[i]['image_cnt']; j++) {
+            const resultBySdServer = await _postSdServer(
+                baseServer,
+                prompt,
+                basicReadyQueue[i]['checkpoint'],
+                makeType === 'preset' ? 'square' : basicReadyQueue[i]['canvas_type'],
+            );
+            let binaryImage = Buffer.from(resultBySdServer[0], 'base64');
+            images.push(binaryImage);
+        }
+        await Queue.updateOne(basicReadyQueue[i]['queue_idx'], images, images.length === basicReadyQueue[i]['image_cnt'] ? 1 : 2);
+        const objectID = basicReadyQueue[i]['object_id'];
+        const pushToken = basicReadyQueue[i]['push_token'];
+        const objectSnapshot = await firestore.collection(makeType).doc(objectID);
+        const objectData = await objectSnapshot.get();
+        if (!objectData.exists) {
+            objectSnapshot.update({create_status: 'error'}); // pending: 대기중, error: 에러, finish: 생성완료, view_completed: 조회완료,  saved: 사용자 저장까지 완료
+            console.log(`image 생성 저장 실패! ${Common.getDateString(1)}`);
+        } else {
+            objectSnapshot.update({create_status: 'finish'}); //
+            if (pushToken !== null && pushToken !== undefined && pushToken !== '') {
+                _postPushMessage('WEBTOON_AI', `${makeType} 생성 완료!`, [pushToken]);
+            }
+            console.log(`image 생성 완료! ${Common.getDateString(1)}`);
+        }
+    }
 }
 manager.start('runQueue');

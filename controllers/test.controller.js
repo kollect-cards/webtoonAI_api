@@ -20,7 +20,7 @@ exports.txtToImg = async (req, res, next) => {
             "cfg_scale": 7,
             "enable_hr": true,
             "hr_upscaler": "R-ESRGAN 4x+ Anime6B",
-            "hr_scale": 1.5,
+            "hr_scale": 1.0,
             "alwayson_scripts": {
                 "ADetailer": {
                     "args": [
